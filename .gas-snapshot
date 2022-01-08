@@ -1,0 +1,6 @@
+testAliasOldInit() (gas: 5307703)
+testAliasInit() (gas: 5332267)
+testAliasPackedInit() (gas: 3820722)
+testDecode() (gas: 297)
+testAliasPackedPrecision() (gas: 1633725)
+testEncode() (gas: 206)

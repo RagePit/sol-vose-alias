@@ -3,14 +3,14 @@
 
 // import {DSTest} from "ds-test/test.sol";
 
-// import {Alias} from "./Alias.sol";
+// import {AliasOld} from "./AliasOld.sol";
 
 // contract AliasRunTest is DSTest {
 
 //     uint constant WEIGHT_LEN = 10;
 //     uint constant TEST_RUNS = 10000;
 
-//     Alias aliasMethod;
+//     AliasOld aliasOld;
 
 //     uint[] weights;
 //     uint weightSum;
@@ -33,41 +33,28 @@
 //         weightSum = sum;
 //         weights = _weights;
 
-//         aliasMethod = new Alias();
+//         aliasOld = new AliasOld();
         
-//         aliasMethod.init(_weights, 0);
+//         aliasOld.init(_weights, 0);
 //     } 
 
-//     // function testAliasRun() public {
-//     //     uint precision = aliasMethod.precision();
-//     //     for (uint i = 0; i < TEST_RUNS; i++) {
-//     //         uint r = uint(keccak256(abi.encode(i)));
-
-//     //         uint column = r % WEIGHT_LEN;
-//     //         bool side = r % precision < aliasMethod.prob(column);
-
-//     //         uint ret = side ? column : aliasMethod.aliases(column);
-//     //     }
-        
-//     // }
-
-//     function testAliasPrecision() public {
+//     function testAliasOldPrecision() public {
 //         uint[] memory found = new uint[](WEIGHT_LEN);
         
-//         uint precision = aliasMethod.DECIMALS();
-//         uint16[] memory prob = aliasMethod.probabilities(0);
-//         uint16[] memory al = aliasMethod.getAliases(0);
+//         uint precision = aliasOld.precision();
+//         uint16[] memory prob = aliasOld.probabilities(0);
+//         uint16[] memory al = aliasOld.getAliases(0);
 
 //         for (uint i = 0; i < TEST_RUNS; i++) {
 //             uint r = uint(keccak256(abi.encode(i, 2)));
 //             uint column = r % WEIGHT_LEN;
-//             bool side = r % precision > prob[column];
+//             bool side = r % precision < prob[column];
 
 //             uint ret = side ? column : al[column];
 //             found[ret]++;
 //         }
 
-//         emit log("~~~~~~~~ NEW ~~~~~~~~");
+//         emit log("~~~~~~~~ OLD ~~~~~~~");
 
 //         uint[] memory _weights = weights;
 //         uint sum = weightSum;
@@ -77,7 +64,7 @@
 //             uint f = found[i] * 100000 / TEST_RUNS;
 //             uint weight = _weights[i];
 //             uint expected = weight * 100000 / sum;
-//             uint p = precision - prob[i];
+//             uint p = prob[i];
 
 //             emit log(string(
 //                 abi.encodePacked(
