@@ -3,7 +3,6 @@ pragma solidity ^0.8.6;
 
 import {DSTest} from "ds-test/test.sol";
 
-import {Alias} from "./Alias.sol";
 import {AliasPacked} from "./AliasPacked.sol";
 import {AliasOld} from "./AliasOld.sol";
 
@@ -11,7 +10,6 @@ contract AliasInitTest is DSTest {
 
     uint constant WEIGHT_LEN = 1000;
 
-    Alias aliasMethod;
     AliasOld aliasOld;
 
     uint[] weights;
@@ -21,7 +19,6 @@ contract AliasInitTest is DSTest {
         
         uint[] memory _weights = new uint[](WEIGHT_LEN);
 
-        aliasMethod = new Alias();
         aliasOld = new AliasOld();
 
         uint sum = 0;
@@ -38,10 +35,6 @@ contract AliasInitTest is DSTest {
 
     function testAliasOldInit() public {
         aliasOld.init(weights, 0);
-    }
-
-    function testAliasInit() public {
-        aliasMethod.init(weights, 0);
     }
 
     address pointer;

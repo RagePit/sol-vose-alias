@@ -12,6 +12,11 @@ library AliasPacked {
 
     uint constant internal DECIMALS = 1e5;
 
+    //Tried making this more dynamic but wouldn't work as a constant
+    //Stores the amount of bytes in a single uint24 
+    //1 uint24, max of 0xffffff = 3 bytes
+    uint constant internal BYTES_OFFSET = 3;
+
     function init(uint[] memory weights) internal returns(address) {
         // uint hh = gasleft();
         uint N = weights.length;
@@ -138,16 +143,32 @@ library AliasPacked {
     }
 
     function pluck(address _pointer, uint _column) internal view returns(uint16 probability, uint16 al) {
-        uint position = _column * 3;
-        return decode(toUint24(SSTORE2.read(_pointer, position, position + 3), 0));
+        uint position = _column * BYTES_OFFSET;
+        return decode(toUint24(SSTORE2.read(_pointer, position, position + BYTES_OFFSET)));
     }
 
-    function toUint24(bytes memory _bytes, uint256 _start) internal pure returns (uint24) {
+    function getRandomIndex(address _pointer, uint rand) internal view returns(uint) {
+        //Check this to make sure the rand is at least what we expect it to be
+        require(rand > PRECISION);
+        //This gets the amount of uint24's stored within the pointer
+        //1 uint24 = 3 bytes.
+        uint maxColumn = (_pointer.code.length - SSTORE2.DATA_OFFSET) / BYTES_OFFSET;
+        //we first pick a random column to inspect the probability at
+        uint column = rand % maxColumn;
+        //We pluck the probability and alias out of the column
+        (uint16 p, uint16 a) = pluck(_pointer, column);
+        //We check if the "decimal" portion of our random number is less than probability
+        bool side = rand % PRECISION < p;
+        //If it is, we return the column we chose earlier, else we choose the alias at that column
+        return side ? column : a;
+    }
+
+    function toUint24(bytes memory _bytes) internal pure returns (uint24) {
         // require(_bytes.length >= _start + 3, "toUint24_outOfBounds");
         uint24 tempUint;
 
         assembly {
-            tempUint := mload(add(add(_bytes, 0x3), _start))
+            tempUint := mload(add(add(_bytes, 0x3), 0))
         }
 
         return tempUint;

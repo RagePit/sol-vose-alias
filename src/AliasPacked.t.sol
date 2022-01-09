@@ -46,17 +46,11 @@ contract AliasPackedTest is DSTest {
         assertEq(a, 800);
     }
 
-    function testSingleValue() public {
-        uint precision = AliasPacked.precision();
+    function testSingleValue() public view {
         address _pointer = pointer;
 
         uint r = uint(keccak256(abi.encode(200)));
-        uint column = r % WEIGHT_LEN;
-        
-        (uint16 p, uint16 a) = AliasPacked.pluck(_pointer, column);
-        
-        bool side = r % precision < p;
-        uint ret = side ? column : a;
+        AliasPacked.getRandomIndex(_pointer, r);
     }
 
     function testAliasPackedPrecision() public {
@@ -67,12 +61,7 @@ contract AliasPackedTest is DSTest {
 
         for (uint i = 0; i < TEST_RUNS; i++) {
             uint r = uint(keccak256(abi.encode(i, 2)));
-            uint column = r % WEIGHT_LEN;
-            
-            (uint16 p, uint16 a) = AliasPacked.pluck(_pointer, column);
-            
-            bool side = r % precision < p;
-            uint ret = side ? column : a;
+            uint ret = AliasPacked.getRandomIndex(_pointer, r);
             found[ret]++;
         }
         emit log("~~~~~~~~ PACKED ~~~~~~~");
