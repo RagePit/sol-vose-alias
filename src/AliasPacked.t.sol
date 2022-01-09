@@ -8,7 +8,7 @@ import {AliasPacked} from "./AliasPacked.sol";
 
 contract AliasPackedTest is DSTest {
 
-    uint constant WEIGHT_LEN = 10;
+    uint constant WEIGHT_LEN = 1000;
     uint constant TEST_RUNS = 1000;
 
     uint[] weights;
@@ -19,12 +19,12 @@ contract AliasPackedTest is DSTest {
         uint[] memory _weights = new uint[](WEIGHT_LEN);
         uint sum;
 
-        uint[10] memory __weights = [uint(150), 100, 201, 611, 500, 205, 300, 300, 101, 559];
+        // uint[10] memory __weights = [uint(150), 100, 201, 611, 500, 205, 300, 300, 101, 559];
 
         for(uint i = 0; i < WEIGHT_LEN; i++) {
-            // uint r = uint(keccak256(abi.encode(i))) % 1000000;
+            uint r = uint(keccak256(abi.encode(i))) % 100000;
             // uint r = 100;
-            uint r = __weights[i];
+            // uint r = __weights[i];
             _weights[i] = r;
             sum += r;
         }
@@ -44,6 +44,19 @@ contract AliasPackedTest is DSTest {
         (uint16 p, uint16 a) = AliasPacked.decode(8387360);
         assertEq(p, 4095);
         assertEq(a, 800);
+    }
+
+    function testSingleValue() public {
+        uint precision = AliasPacked.precision();
+        address _pointer = pointer;
+
+        uint r = uint(keccak256(abi.encode(200)));
+        uint column = r % WEIGHT_LEN;
+        
+        (uint16 p, uint16 a) = AliasPacked.pluck(_pointer, column);
+        
+        bool side = r % precision < p;
+        uint ret = side ? column : a;
     }
 
     function testAliasPackedPrecision() public {

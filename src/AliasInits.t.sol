@@ -38,19 +38,16 @@ contract AliasInitTest is DSTest {
 
     function testAliasOldInit() public {
         aliasOld.init(weights, 0);
-        // assert(false);
     }
 
     function testAliasInit() public {
         aliasMethod.init(weights, 0);
-        // assert(false);
     }
 
     address pointer;
 
     function testAliasPackedInit() public {
         pointer = AliasPacked.init(weights);
-        // assert(false);
     }
 
 }
