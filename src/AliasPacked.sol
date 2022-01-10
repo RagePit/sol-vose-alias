@@ -23,6 +23,9 @@ library AliasPacked {
         
         //We need to squeeze our alias (index) into 11 bits. So no arrays longer than 2047 thanks
         require(N <= 2047);
+
+        //currently arbitrary decision because of my store() implementation
+        require(N % 5 == 0);
         uint avg = uint(PRECISION)*DECIMALS/N;
         // uint g = gasleft();
 
@@ -53,6 +56,7 @@ library AliasPacked {
 
         uint24[] memory al = new uint24[](N);
         
+        uint round = N*10;
         unchecked {
             while (smallSize != 0 && largeSize != 0) {
                 uint16 less = small[--smallSize];
@@ -60,8 +64,8 @@ library AliasPacked {
                 
                 uint wLess = weights[less];
                 uint wMore = weights[more];
-
-                al[less] = encode(uint16(((wLess * N * 10/ DECIMALS)+5)/10), more);
+                //Round for higher accuracy
+                al[less] = encode(uint16(((wLess * round/ DECIMALS)+5)/10), more);
                 // al[less] = encode(uint16(wLess * N / DECIMALS), more);
 
                 wMore = wMore + wLess - avg;
@@ -91,6 +95,7 @@ library AliasPacked {
         
     }
 
+    //For now only works with weight arrays with length multiple of 5
     function store(uint24[] memory al) internal returns(address) {
         bytes memory b;
         uint N = al.length;
@@ -143,21 +148,44 @@ library AliasPacked {
         al = uint16(encoded) & 2047;
     }
 
-    function pluck(address _pointer, uint _column) internal view returns(uint16 probability, uint16 al) {
+    // function pluck(address _pointer, uint _column) internal view returns(uint16 probability, uint16 al) {
+    //     uint position = _column * BYTES_OFFSET;
+    //     return decode(toUint24(SSTORE2.read(_pointer, position, position + BYTES_OFFSET)));
+    // }
+
+    // function getRandomIndex(address _pointer, uint rand) internal view returns(uint) {
+    //     //Check this to make sure the rand is at least what we expect it to be
+    //     require(rand > PRECISION);
+    //     //This gets the amount of uint24's stored within the pointer
+    //     //1 uint24 = 3 bytes.
+    //     uint maxColumn = (_pointer.code.length - SSTORE2.DATA_OFFSET) / BYTES_OFFSET;
+    //     //we first pick a random column to inspect the probability at
+    //     //TODO: modulo bias... fix or accept it?
+    //     uint column = rand % maxColumn;
+    //     //We pluck the probability and alias out of the column
+    //     (uint16 p, uint16 a) = pluck(_pointer, column);
+    //     //We check if the "decimal" portion of our random number is less than probability
+    //     bool side = rand % PRECISION < p;
+    //     //If it is, we return the column we chose earlier, else we choose the alias at that column
+    //     return side ? column : a;
+    // }
+
+    function pluck(bytes memory b, uint _column) internal pure returns(uint16 probability, uint16 al) {
         uint position = _column * BYTES_OFFSET;
-        return decode(toUint24(SSTORE2.read(_pointer, position, position + BYTES_OFFSET)));
+        return decode(uint24(bytes3(b[position]) | (bytes3(b[position+1])>>8) | bytes3(b[position+2])>>16));
     }
 
-    function getRandomIndex(address _pointer, uint rand) internal view returns(uint) {
+    function getRandomIndex(bytes memory b, uint rand) internal pure returns(uint) {
         //Check this to make sure the rand is at least what we expect it to be
         require(rand > PRECISION);
-        //This gets the amount of uint24's stored within the pointer
+        //This gets the amount of uint24's stored within the bytes
         //1 uint24 = 3 bytes.
-        uint maxColumn = (_pointer.code.length - SSTORE2.DATA_OFFSET) / BYTES_OFFSET;
+        uint maxColumn = (b.length) / BYTES_OFFSET;
         //we first pick a random column to inspect the probability at
+        //TODO: modulo bias... fix or accept it?
         uint column = rand % maxColumn;
         //We pluck the probability and alias out of the column
-        (uint16 p, uint16 a) = pluck(_pointer, column);
+        (uint16 p, uint16 a) = pluck(b, column);
         //We check if the "decimal" portion of our random number is less than probability
         bool side = rand % PRECISION < p;
         //If it is, we return the column we chose earlier, else we choose the alias at that column

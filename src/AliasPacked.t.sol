@@ -8,8 +8,8 @@ import {AliasPacked} from "./AliasPacked.sol";
 
 contract AliasPackedTest is DSTest {
 
-    uint constant WEIGHT_LEN = 10;
-    uint constant TEST_RUNS = 10000;
+    uint constant WEIGHT_LEN = 1000;
+    uint constant TEST_RUNS = 10;
 
     uint[] weights;
     uint weightSum;
@@ -19,12 +19,12 @@ contract AliasPackedTest is DSTest {
         uint[] memory _weights = new uint[](WEIGHT_LEN);
         uint sum;
 
-        uint[10] memory __weights = [uint(150), 100, 201, 611, 500, 205, 300, 300, 101, 559];
+        // uint[10] memory __weights = [uint(150), 100, 201, 611, 500, 205, 300, 300, 101, 559];
 
         for(uint i = 0; i < WEIGHT_LEN; i++) {
-            // uint r = uint(keccak256(abi.encode(i))) % 100000;
+            uint r = uint(keccak256(abi.encode(i))) % 100000;
             // uint r = 100;
-            uint r = __weights[i];
+            // uint r = __weights[i];
             _weights[i] = r;
             sum += r;
         }
@@ -47,33 +47,42 @@ contract AliasPackedTest is DSTest {
     }
 
     function testSingleValue() public view {
-        address _pointer = pointer;
+        bytes memory b = SSTORE2.read(pointer);
 
         uint r = uint(keccak256(abi.encode(200)));
-        AliasPacked.getRandomIndex(_pointer, r);
+        AliasPacked.getRandomIndex(b, r);
     }
+
+    function testSevenValues() public view {
+        bytes memory b = SSTORE2.read(pointer);
+
+        uint r = uint(keccak256(abi.encode(200)));
+        for (uint i = 0; i < 7; i++)
+            AliasPacked.getRandomIndex(b, r);
+    }
+
 
     function testAliasPackedPrecision() public {
         uint[] memory found = new uint[](WEIGHT_LEN);
         
         uint precision = AliasPacked.precision();
-        address _pointer = pointer;
+        bytes memory b = SSTORE2.read(pointer);
 
         for (uint i = 0; i < TEST_RUNS; i++) {
             uint r = uint(keccak256(abi.encode(i, 2)));
-            uint ret = AliasPacked.getRandomIndex(_pointer, r);
+            uint ret = AliasPacked.getRandomIndex(b, r);
             found[ret]++;
         }
         emit log("~~~~~~~~ PACKED ~~~~~~~");
 
-        uint[] memory _weights = weights;
-        uint sum = weightSum;
+        // uint[] memory _weights = weights;
+        // uint sum = weightSum;
 
         for (uint i = 0; i < WEIGHT_LEN; i++) {
-            uint f = found[i] * 100000 / TEST_RUNS;
-            uint weight = _weights[i];
-            uint expected = weight * 100000 / sum;
-            (uint16 pr, ) = AliasPacked.pluck(_pointer, i);
+            // uint f = found[i] * 100000 / TEST_RUNS;
+            // uint weight = _weights[i];
+            // uint expected = weight * 100000 / sum;
+            (uint16 pr, ) = AliasPacked.pluck(b, i);
             uint p = pr;
 
             emit log_named_uint("Prob", p);
@@ -86,28 +95,28 @@ contract AliasPackedTest is DSTest {
             //     )
             // ));
             // emit log_named_uint("Alias", a);
-            emit log(string(
-                abi.encodePacked(
-                    "Expected    ",
-                    uint2str(weight*TEST_RUNS/sum)
-                    // uint2str(expected/1000),
-                    // ".",
-                    // uint2str(expected%1000),
-                    // "%"
-                )
-            ));
-            emit log(string(
-                abi.encodePacked(
-                    "Actual      ",
-                    uint2str(found[i])
-                    // uint2str(f/1000),
-                    // ".",
-                    // uint2str(f%1000),
-                    // "%\n"
-                )
-            ));
+            // emit log(string(
+            //     abi.encodePacked(
+            //         "Expected    ",
+            //         uint2str(weight*TEST_RUNS/sum)
+            //         // uint2str(expected/1000),
+            //         // ".",
+            //         // uint2str(expected%1000),
+            //         // "%"
+            //     )
+            // ));
+            // emit log(string(
+            //     abi.encodePacked(
+            //         "Actual      ",
+            //         uint2str(found[i])
+            //         // uint2str(f/1000),
+            //         // ".",
+            //         // uint2str(f%1000),
+            //         // "%\n"
+            //     )
+            // ));
 
-            assertLt(uint(abs(int(f) - int(expected))), 1000);
+            // assertLt(uint(abs(int(f) - int(expected))), 1000);
         }
 
         // assert(false);
