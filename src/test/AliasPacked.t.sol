@@ -4,12 +4,12 @@ pragma solidity ^0.8.6;
 import {DSTest} from "ds-test/test.sol";
 import {SSTORE2} from "solmate/utils/SSTORE2.sol";
 
-import {AliasPacked} from "./AliasPacked.sol";
+import {AliasPacked} from "../AliasPacked.sol";
 
 contract AliasPackedTest is DSTest {
 
     uint constant WEIGHT_LEN = 1000;
-    uint constant TEST_RUNS = 10;
+    uint constant TEST_RUNS = 1000;
 
     uint[] weights;
     uint weightSum;
@@ -19,7 +19,7 @@ contract AliasPackedTest is DSTest {
         uint[] memory _weights = new uint[](WEIGHT_LEN);
         uint sum;
 
-        // uint[10] memory __weights = [uint(150), 100, 201, 611, 500, 205, 300, 300, 101, 559];
+        // uint[WEIGHT_LEN] memory __weights = [uint(1), 1, 1, 1, 10000];
 
         for(uint i = 0; i < WEIGHT_LEN; i++) {
             uint r = uint(keccak256(abi.encode(i))) % 100000;
@@ -80,10 +80,9 @@ contract AliasPackedTest is DSTest {
             // uint f = found[i] * 100000 / TEST_RUNS;
             // uint weight = _weights[i];
             // uint expected = weight * 100000 / sum;
-            (uint16 pr, ) = AliasPacked.pluck(b, i);
-            uint p = pr;
+            (uint16 pr, uint16 al) = AliasPacked.pluck(b, i);
 
-            emit log_named_uint("Prob", p);
+            emit log_named_uint("Prob", pr);
             // emit log(string(
             //     abi.encodePacked(
             //         "Prob    ",
@@ -92,7 +91,7 @@ contract AliasPackedTest is DSTest {
             //         u
             //     )
             // ));
-            // emit log_named_uint("Alias", a);
+            // emit log_named_uint("Alias", al);
             // emit log(string(
             //     abi.encodePacked(
             //         "Expected    ",
@@ -117,7 +116,7 @@ contract AliasPackedTest is DSTest {
             // assertLt(uint(abs(int(f) - int(expected))), 1000);
         }
 
-        // assert(false);
+        assert(false);
     }
 
     function abs(int x) private pure returns (int) {

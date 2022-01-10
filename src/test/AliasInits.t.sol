@@ -3,7 +3,7 @@ pragma solidity ^0.8.6;
 
 import {DSTest} from "ds-test/test.sol";
 
-import {AliasPacked} from "./AliasPacked.sol";
+import {AliasPacked} from "../AliasPacked.sol";
 
 contract AliasInitTest is DSTest {
 
