@@ -23,7 +23,6 @@ contract AliasPackedTest is DSTest {
 
         for(uint i = 0; i < WEIGHT_LEN; i++) {
             uint r = uint(keccak256(abi.encode(i))) % 100000;
-            // uint r = 100;
             // uint r = __weights[i];
             _weights[i] = r;
             sum += r;
@@ -73,7 +72,6 @@ contract AliasPackedTest is DSTest {
             uint ret = AliasPacked.getRandomIndex(b, r);
             found[ret]++;
         }
-        emit log("~~~~~~~~ PACKED ~~~~~~~");
 
         // uint[] memory _weights = weights;
         // uint sum = weightSum;

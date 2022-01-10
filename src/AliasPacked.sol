@@ -53,7 +53,6 @@ library AliasPacked {
         // emit log_named_uint("   Indices Arrays", g - gasleft());
         // g = gasleft();
     
-
         uint24[] memory al = new uint24[](N);
         
         uint round = N*10;
@@ -66,7 +65,6 @@ library AliasPacked {
                 uint wMore = weights[more];
                 //Round for higher accuracy
                 al[less] = encode(uint16(((wLess * round/ DECIMALS)+5)/10), more);
-                // al[less] = encode(uint16(wLess * N / DECIMALS), more);
 
                 wMore = wMore + wLess - avg;
                 weights[more] = wMore;
@@ -89,10 +87,7 @@ library AliasPacked {
 
         // emit log_named_uint("   Main Algorithm", g - gasleft());
         // g = gasleft();
-
-
         return store(al);
-        
     }
 
     //For now only works with weight arrays with length multiple of 5
