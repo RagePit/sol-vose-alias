@@ -10,7 +10,7 @@ library AliasPacked {
     //Bitmask to set probability to 8191
     uint24 constant internal PROB_SHIFT = uint24(PRECISION) << 11;
 
-    uint constant internal DECIMALS = 1e5;
+    uint constant internal DECIMALS = 1e6;
 
     //Tried making this more dynamic but wouldn't work as a constant
     //Stores the amount of bytes in a single uint24 
@@ -61,7 +61,8 @@ library AliasPacked {
                 uint wLess = weights[less];
                 uint wMore = weights[more];
 
-                al[less] = encode(uint16(((wLess * N / DECIMALS)+5)/10), more);
+                al[less] = encode(uint16(((wLess * N * 10/ DECIMALS)+5)/10), more);
+                // al[less] = encode(uint16(wLess * N / DECIMALS), more);
 
                 wMore = wMore + wLess - avg;
                 weights[more] = wMore;
