@@ -9,7 +9,7 @@ import {AliasPacked} from "../AliasPacked.sol";
 contract AliasPackedTest is DSTest {
 
     uint constant WEIGHT_LEN = 1000;
-    uint constant TEST_RUNS = 1000;
+    uint constant TEST_RUNS = 100;
 
     uint[] weights;
     uint weightSum;
@@ -34,13 +34,13 @@ contract AliasPackedTest is DSTest {
         pointer = AliasPacked.init(_weights);
     } 
 
-    function testEncode() public {
-        uint24 encoded = AliasPacked.encode(4095, 800);
-        assertEq(encoded, 8387360);
+    function testEncodeB() public {
+        bytes3 encoded = AliasPacked.encodeB(4095, 800);
+        assertEq(uint24(encoded), 8387360);
     }
 
-    function testDecode() public {
-        (uint16 p, uint16 a) = AliasPacked.decode(8387360);
+    function testDecodeB() public {
+        (uint16 p, uint16 a) = AliasPacked.decodeB(bytes3(uint24(8387360)));
         assertEq(p, 4095);
         assertEq(a, 800);
     }
@@ -52,16 +52,19 @@ contract AliasPackedTest is DSTest {
         AliasPacked.getRandomIndex(b, r);
     }
 
-    function testSevenValues() public view {
-        bytes memory b = SSTORE2.read(pointer);
-
-        uint r = uint(keccak256(abi.encode(200)));
-        for (uint i = 0; i < 7; i++)
+    function testAliasRuns() public view {
+        for (uint i = 0; i < TEST_RUNS; i++) {
+            bytes memory b = SSTORE2.read(pointer);
+            uint r = uint(keccak256(abi.encode(i)));
             AliasPacked.getRandomIndex(b, r);
+        }
     }
 
+    function testAliasPackedCorrectLength() public {
+        assertEq(SSTORE2.read(pointer).length, WEIGHT_LEN * 3);
+    }
 
-    function testAliasPackedPrecision() public {
+    function atestAliasPackedPrecision() public {
         uint[] memory found = new uint[](WEIGHT_LEN);
         
         uint precision = AliasPacked.precision();
@@ -116,7 +119,7 @@ contract AliasPackedTest is DSTest {
             // assertLt(uint(abs(int(f) - int(expected))), 1000);
         }
 
-        assert(false);
+        // assert(false);
     }
 
     function abs(int x) private pure returns (int) {

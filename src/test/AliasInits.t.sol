@@ -2,12 +2,13 @@
 pragma solidity ^0.8.6;
 
 import {DSTest} from "ds-test/test.sol";
+import {SSTORE2} from "solmate/utils/SSTORE2.sol";
 
 import {AliasPacked} from "../AliasPacked.sol";
 
 contract AliasInitTest is DSTest {
 
-    uint constant WEIGHT_LEN = 1000;
+    uint constant WEIGHT_LEN = 999;
 
     uint[] weights;
     uint weightSum;
@@ -28,10 +29,9 @@ contract AliasInitTest is DSTest {
 
     }
 
-    address pointer;
-
     function testAliasPackedInit() public {
-        pointer = AliasPacked.init(weights);
+        AliasPacked.init(weights);
     }
 
 }
+ 
