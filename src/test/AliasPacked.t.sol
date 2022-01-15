@@ -8,7 +8,7 @@ import {AliasPacked} from "../AliasPacked.sol";
 
 contract AliasPackedTest is DSTest {
 
-    uint constant WEIGHT_LEN = 1000;
+    uint constant WEIGHT_LEN = 999;
     uint constant TEST_RUNS = 100;
 
     uint[] weights;
@@ -34,13 +34,13 @@ contract AliasPackedTest is DSTest {
         pointer = AliasPacked.init(_weights);
     } 
 
-    function testEncodeB() public {
-        bytes3 encoded = AliasPacked.encodeB(4095, 800);
+    function testEncode() public {
+        uint24 encoded = AliasPacked.encode(4095, 800);
         assertEq(uint24(encoded), 8387360);
     }
 
-    function testDecodeB() public {
-        (uint16 p, uint16 a) = AliasPacked.decodeB(bytes3(uint24(8387360)));
+    function testDecode() public {
+        (uint16 p, uint16 a) = AliasPacked.decode(8387360);
         assertEq(p, 4095);
         assertEq(a, 800);
     }

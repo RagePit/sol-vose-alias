@@ -8,7 +8,7 @@ library AliasPacked {
     //8191
     uint16 constant internal PRECISION = 2**13 - 1;
     //Bitmask to set probability to 8191
-    bytes3 constant internal PROB_SHIFT = bytes3(uint24(PRECISION) << 11);
+    uint24 constant internal PROB_SHIFT = uint24(PRECISION) << 11;
 
     uint constant internal DECIMALS = 1e6;
 
@@ -44,7 +44,7 @@ library AliasPacked {
             }
         }
     
-        bytes3[] memory al = new bytes3[](N);
+        uint24[] memory al = new uint24[](N);
         
         uint round = N*10;
         unchecked {
@@ -55,12 +55,12 @@ library AliasPacked {
                 uint wLess = weights[less];
                 uint wMore = weights[more];
                 //Round for higher accuracy
-                al[less] = encodeB(uint16(((wLess * round/ DECIMALS)+5)/10), more);
+                al[less] = encode(uint16(((wLess * round/ DECIMALS)+5)/10), more);
 
                 wMore = wMore + wLess - avg;
                 weights[more] = wMore;
                 
-                if (wMore < avg * 987 / 1000)
+                if (wMore < avg)
                     small[smallSize++] = more;
                 else
                     large[largeSize++] = more;
@@ -94,59 +94,81 @@ library AliasPacked {
         }
     }
 
-    function store(bytes3[] memory al) internal returns(address) {
+    function store(uint24[] memory al) internal returns(address) {
         bytes memory b;
         uint N = al.length;
-        uint last = N - (N % 90);
+        uint last = N - (N % 100);
+        // unchecked {
+        //     for (uint i = 0; i < N; i+=100) {
+        //         if (i == last) {
+        //             bytes memory bTemp;
+        //             for (uint j = i; j < N; j++) {
+        //                 bTemp = bytes.concat(bTemp, bytes3(al[j]));
+        //             }
+        //             b = bytes.concat(b, bTemp);
+        //             break;
+        //         } else {
+        //             bytes memory bTemp;
+        //             for (uint j = 0; j < 10; j++) {
+        //                 bTemp = bytes.concat(bTemp, pack10Bytes3(al, i+(10*j)));
+        //             }
+        //             b = bytes.concat(b, bTemp);
+        //         }
+        //     }
+        // }
         unchecked {
-            for (uint i = 0; i < N; i+=90) {
-                if (i == last) {
-                    bytes memory bTemp;
-                    for (uint j = i; j < N; j++) {
-                        bTemp = bytes.concat(bTemp, al[j]);
-                    }
-                    b = bytes.concat(b, bTemp);
-                    break;
-                } else {
-                    bytes30 n1 = pack10Bytes3(al, i);
-                    bytes30 n2 = pack10Bytes3(al, i+10);
-                    bytes30 n3 = pack10Bytes3(al, i+20);
-                    bytes30 n4 = pack10Bytes3(al, i+30);
-                    bytes30 n5 = pack10Bytes3(al, i+40);
-                
-                    b = bytes.concat(b, n1, n2, n3, n4, n5);
+            uint i = 0;
+            while(i != last) {
+                bytes memory bTemp;
+                for (uint j = 0; j < 10; j++) {
+                    bTemp = bytes.concat(bTemp, pack10Bytes3(al, i+(10*j)));
                 }
+                b = bytes.concat(b, bTemp);
+                i+=100;
+            }
+            if (i != N) {
+                bytes memory bTemp;
+                while(i + 10 < N) {
+                    bTemp = bytes.concat(bTemp, pack10Bytes3(al, i));
+                    i+=10;
+                }
+                while (i < N) {
+                    bTemp = bytes.concat(bTemp, bytes3(al[i]));
+                    i++;
+                }
+                b = bytes.concat(b, bTemp);
             }
         }
         
         return SSTORE2.write(b);
     }
 
-    function pack10Bytes3(bytes3[] memory al, uint i) private pure returns(bytes30) {
-        return (bytes30(al[i])) | 
-                (bytes30(al[i+1]) >> 24) | 
-                (bytes30(al[i+2]) >> 48) | 
-                (bytes30(al[i+3]) >> 72) | 
-                (bytes30(al[i+4]) >> 96) |
-                (bytes30(al[i+5]) >> 120) |
-                (bytes30(al[i+6]) >> 144) |
-                (bytes30(al[i+7]) >> 168) |
-                (bytes30(al[i+8]) >> 192) |
-                (bytes30(al[i+9]) >> 216);
+    function pack10Bytes3(uint24[] memory al, uint i) private pure returns(bytes30) {
+        return (bytes30(bytes3(al[i]))) | 
+                (bytes30(bytes3(al[i+1])) >> 24) | 
+                (bytes30(bytes3(al[i+2])) >> 48) | 
+                (bytes30(bytes3(al[i+3])) >> 72) | 
+                (bytes30(bytes3(al[i+4])) >> 96) |
+                (bytes30(bytes3(al[i+5])) >> 120) |
+                (bytes30(bytes3(al[i+6])) >> 144) |
+                (bytes30(bytes3(al[i+7])) >> 168) |
+                (bytes30(bytes3(al[i+8])) >> 192) |
+                (bytes30(bytes3(al[i+9])) >> 216);
     }
 
-    function encodeB(uint16 probability, uint16 al) internal pure returns(bytes3 encoded) {
-        return bytes3((uint24(probability & 8191) << 11) | uint24(al & 2047));
+    function encode(uint16 probability, uint16 al) internal pure returns(uint24 encoded) {
+        encoded |= uint24(probability) << 11;
+        encoded |= uint24(al & 2047);
     }
 
-    function decodeB(bytes3 encoded) internal pure returns(uint16 probability, uint16 al) {
-        probability = uint16(uint24(encoded >> 11) & 8191);
-        al = uint16(uint24(encoded)) & 2047;
+    function decode(uint24 encoded) internal pure returns(uint16 probability, uint16 al) {
+        probability = uint16(encoded >> 11);
+        al = uint16(encoded) & 2047;
     }
 
     function pluck(bytes memory b, uint _column) internal pure returns(uint16 probability, uint16 al) {
         uint position = _column * BYTES_OFFSET;
-        return decodeB(bytes3(b[position]) | (bytes3(b[position+1])>>8) | bytes3(b[position+2])>>16);
+        return decode(uint24(bytes3(b[position]) | (bytes3(b[position+1])>>8) | bytes3(b[position+2])>>16));
     }
 
     function getRandomIndex(bytes memory b, uint rand) internal pure returns(uint) {

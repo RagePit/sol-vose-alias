@@ -8,7 +8,7 @@ import {AliasPacked} from "../AliasPacked.sol";
 
 contract AliasInitTest is DSTest {
 
-    uint constant WEIGHT_LEN = 999;
+    uint constant WEIGHT_LEN = 267;
 
     uint[] weights;
     uint weightSum;
