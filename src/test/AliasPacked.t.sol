@@ -64,63 +64,71 @@ contract AliasPackedTest is DSTest {
         assertEq(SSTORE2.read(pointer).length, WEIGHT_LEN * 3);
     }
 
-    function atestAliasPackedPrecision() public {
-        uint[] memory found = new uint[](WEIGHT_LEN);
-        
-        uint precision = AliasPacked.precision();
-        bytes memory b = SSTORE2.read(pointer);
+    function testStoreBytes() public { 
+        bytes memory b = hex"abc123";
 
-        for (uint i = 0; i < TEST_RUNS; i++) {
-            uint r = uint(keccak256(abi.encode(i, 2)));
-            uint ret = AliasPacked.getRandomIndex(b, r);
-            found[ret]++;
-        }
+        address _pointer = AliasPacked.storeBytes(b);
 
-        // uint[] memory _weights = weights;
-        // uint sum = weightSum;
-
-        for (uint i = 0; i < WEIGHT_LEN; i++) {
-            // uint f = found[i] * 100000 / TEST_RUNS;
-            // uint weight = _weights[i];
-            // uint expected = weight * 100000 / sum;
-            (uint16 pr, uint16 al) = AliasPacked.pluck(b, i);
-
-            emit log_named_uint("Prob", pr);
-            // emit log(string(
-            //     abi.encodePacked(
-            //         "Prob    ",
-            //         uint2str(p),
-            //         "  ",
-            //         u
-            //     )
-            // ));
-            // emit log_named_uint("Alias", al);
-            // emit log(string(
-            //     abi.encodePacked(
-            //         "Expected    ",
-            //         uint2str(weight*TEST_RUNS/sum)
-            //         // uint2str(expected/1000),
-            //         // ".",
-            //         // uint2str(expected%1000),
-            //         // "%"
-            //     )
-            // ));
-            // emit log(string(
-            //     abi.encodePacked(
-            //         "Actual      ",
-            //         uint2str(found[i])
-            //         // uint2str(f/1000),
-            //         // ".",
-            //         // uint2str(f%1000),
-            //         // "%\n"
-            //     )
-            // ));
-
-            // assertLt(uint(abs(int(f) - int(expected))), 1000);
-        }
-
-        // assert(false);
+        assertEq(_pointer.code.length - 1, 3);
     }
+
+    // function testAliasPackedPrecision() public {
+    //     uint[] memory found = new uint[](WEIGHT_LEN);
+        
+    //     uint precision = AliasPacked.precision();
+    //     bytes memory b = SSTORE2.read(pointer);
+
+    //     for (uint i = 0; i < TEST_RUNS; i++) {
+    //         uint r = uint(keccak256(abi.encode(i, 2)));
+    //         uint ret = AliasPacked.getRandomIndex(b, r);
+    //         found[ret]++;
+    //     }
+
+    //     // uint[] memory _weights = weights;
+    //     // uint sum = weightSum;
+
+    //     for (uint i = 0; i < WEIGHT_LEN; i++) {
+    //         // uint f = found[i] * 100000 / TEST_RUNS;
+    //         // uint weight = _weights[i];
+    //         // uint expected = weight * 100000 / sum;
+    //         (uint16 pr, uint16 al) = AliasPacked.pluck(b, i);
+
+    //         emit log_named_uint("Prob", pr);
+    //         // emit log(string(
+    //         //     abi.encodePacked(
+    //         //         "Prob    ",
+    //         //         uint2str(p),
+    //         //         "  ",
+    //         //         u
+    //         //     )
+    //         // ));
+    //         // emit log_named_uint("Alias", al);
+    //         // emit log(string(
+    //         //     abi.encodePacked(
+    //         //         "Expected    ",
+    //         //         uint2str(weight*TEST_RUNS/sum)
+    //         //         // uint2str(expected/1000),
+    //         //         // ".",
+    //         //         // uint2str(expected%1000),
+    //         //         // "%"
+    //         //     )
+    //         // ));
+    //         // emit log(string(
+    //         //     abi.encodePacked(
+    //         //         "Actual      ",
+    //         //         uint2str(found[i])
+    //         //         // uint2str(f/1000),
+    //         //         // ".",
+    //         //         // uint2str(f%1000),
+    //         //         // "%\n"
+    //         //     )
+    //         // ));
+
+    //         // assertLt(uint(abs(int(f) - int(expected))), 1000);
+    //     }
+
+    //     // assert(false);
+    // }
 
     function abs(int x) private pure returns (int) {
         return x >= 0 ? x : -x;

@@ -79,7 +79,11 @@ library AliasPacked {
         return store(al);
     }
 
-    function normalize(uint[] memory weights) private pure {
+    function storeBytes(bytes memory b) internal returns(address) {
+        return SSTORE2.write(b);
+    }
+
+    function normalize(uint[] memory weights) internal pure {
         uint N = weights.length;
         uint weightSum = 0;
         unchecked {
