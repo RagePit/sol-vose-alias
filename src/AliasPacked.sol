@@ -8,7 +8,7 @@ library AliasPacked {
     //8191
     uint16 constant internal PRECISION = 2**13 - 1;
     //Bitmask to set probability to 8191
-    uint24 constant internal PROB_SHIFT = uint24(PRECISION) << 11;
+    bytes3 constant internal PROB_SHIFT = bytes3(uint24(PRECISION) << 11);
 
     uint constant internal DECIMALS = 1e6;
 
@@ -44,7 +44,7 @@ library AliasPacked {
             }
         }
     
-        uint24[] memory al = new uint24[](N);
+        bytes memory al = new bytes(N*3);
         
         uint round = N*10;
         unchecked {
@@ -53,34 +53,42 @@ library AliasPacked {
                 uint16 more = large[--largeSize];
                 
                 uint wLess = weights[less];
-                uint wMore = weights[more];
                 //Round for higher accuracy
-                al[less] = encode(uint16(((wLess * round/ DECIMALS)+5)/10), more);
+                bytes3 toStore = encodeB(uint16(((wLess * round/ DECIMALS)+5)/10), more);
+                less = less*3;
+                al[less] = bytes1(toStore);
+                al[less+1] = bytes1(toStore<<8);
+                al[less+2] = bytes1(toStore<<16);
 
-                wMore = wMore + wLess - avg;
-                weights[more] = wMore;
+                weights[more] += wLess - avg;
                 
-                if (wMore < avg)
+                if (weights[more] < avg)
                     small[smallSize++] = more;
                 else
                     large[largeSize++] = more;
             }
     
             //set probability to 8191
-            while (smallSize != 0)
-                al[small[--smallSize]] |= PROB_SHIFT;
-            
+            while (smallSize != 0) {
+                uint16 ind = small[--smallSize]*3;
+
+                al[ind] = bytes1(PROB_SHIFT);
+                al[ind+1] = bytes1(PROB_SHIFT<<8);
+                al[ind+2] = bytes1(PROB_SHIFT<<16);
+            }
+                
             //set probability to 8191
-            while (largeSize != 0)
-                al[large[--largeSize]] |= PROB_SHIFT;
+            while (largeSize != 0) {
+                uint16 ind = large[--largeSize]*3;
+
+                al[ind] = bytes1(PROB_SHIFT);
+                al[ind+1] = bytes1(PROB_SHIFT<<8);
+                al[ind+2] = bytes1(PROB_SHIFT<<16);
+            }
             
         }
 
-        return store(al);
-    }
-
-    function storeBytes(bytes memory b) internal returns(address) {
-        return SSTORE2.write(b);
+        return SSTORE2.write(al);
     }
 
     function normalize(uint[] memory weights) internal pure {
@@ -98,81 +106,18 @@ library AliasPacked {
         }
     }
 
-    function store(uint24[] memory al) internal returns(address) {
-        bytes memory b;
-        uint N = al.length;
-        uint last = N - (N % 100);
-        // unchecked {
-        //     for (uint i = 0; i < N; i+=100) {
-        //         if (i == last) {
-        //             bytes memory bTemp;
-        //             for (uint j = i; j < N; j++) {
-        //                 bTemp = bytes.concat(bTemp, bytes3(al[j]));
-        //             }
-        //             b = bytes.concat(b, bTemp);
-        //             break;
-        //         } else {
-        //             bytes memory bTemp;
-        //             for (uint j = 0; j < 10; j++) {
-        //                 bTemp = bytes.concat(bTemp, pack10Bytes3(al, i+(10*j)));
-        //             }
-        //             b = bytes.concat(b, bTemp);
-        //         }
-        //     }
-        // }
-        unchecked {
-            uint i = 0;
-            while(i != last) {
-                bytes memory bTemp;
-                for (uint j = 0; j < 10; j++) {
-                    bTemp = bytes.concat(bTemp, pack10Bytes3(al, i+(10*j)));
-                }
-                b = bytes.concat(b, bTemp);
-                i+=100;
-            }
-            if (i != N) {
-                bytes memory bTemp;
-                while(i + 10 < N) {
-                    bTemp = bytes.concat(bTemp, pack10Bytes3(al, i));
-                    i+=10;
-                }
-                while (i < N) {
-                    bTemp = bytes.concat(bTemp, bytes3(al[i]));
-                    i++;
-                }
-                b = bytes.concat(b, bTemp);
-            }
-        }
-        
-        return SSTORE2.write(b);
+    function encodeB(uint16 probability, uint16 al) internal pure returns(bytes3 encoded) {
+        return bytes3((uint24(probability & 8191) << 11) | uint24(al & 2047));
     }
 
-    function pack10Bytes3(uint24[] memory al, uint i) private pure returns(bytes30) {
-        return (bytes30(bytes3(al[i]))) | 
-                (bytes30(bytes3(al[i+1])) >> 24) | 
-                (bytes30(bytes3(al[i+2])) >> 48) | 
-                (bytes30(bytes3(al[i+3])) >> 72) | 
-                (bytes30(bytes3(al[i+4])) >> 96) |
-                (bytes30(bytes3(al[i+5])) >> 120) |
-                (bytes30(bytes3(al[i+6])) >> 144) |
-                (bytes30(bytes3(al[i+7])) >> 168) |
-                (bytes30(bytes3(al[i+8])) >> 192) |
-                (bytes30(bytes3(al[i+9])) >> 216);
-    }
-
-    function encode(uint16 probability, uint16 al) internal pure returns(uint24 encoded) {
-        encoded |= uint24(probability) << 11;
-        encoded |= uint24(al & 2047);
-    }
-
-    function decode(uint24 encoded) internal pure returns(uint16 probability, uint16 al) {
-        probability = uint16(encoded >> 11);
-        al = uint16(encoded) & 2047;
+    function decodeB(bytes3 encoded) internal pure returns(uint16 probability, uint16 al) {
+        probability = uint16(uint24(encoded >> 11) & 8191);
+        al = uint16(uint24(encoded)) & 2047;
     }
 
     function pluck(bytes memory b, uint _column) internal pure returns(uint16 probability, uint16 al) {
         uint position = _column * BYTES_OFFSET;
-        return decode(uint24(bytes3(b[position]) | (bytes3(b[position+1])>>8) | bytes3(b[position+2])>>16));
+        return decodeB(bytes3(b[position]) | (bytes3(b[position+1])>>8) | bytes3(b[position+2])>>16);
     }
 
     function getRandomIndex(bytes memory b, uint rand) internal pure returns(uint) {
@@ -190,16 +135,6 @@ library AliasPacked {
         bool side = rand % PRECISION < p;
         //If it is, we return the column we chose earlier, else we choose the alias at that column
         return side ? column : a;
-    }
-
-    function toUint24(bytes memory _bytes) internal pure returns (uint24) {
-        uint24 tempUint;
-
-        assembly {
-            tempUint := mload(add(add(_bytes, 0x3), 0))
-        }
-
-        return tempUint;
     }
 
     function precision() internal pure returns(uint16) {

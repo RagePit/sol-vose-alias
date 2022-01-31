@@ -15,7 +15,7 @@ contract AliasPackedTest is DSTest {
     uint weightSum;
     address pointer;
     function setUp() public {
-        
+    
         uint[] memory _weights = new uint[](WEIGHT_LEN);
         uint sum;
 
@@ -35,12 +35,12 @@ contract AliasPackedTest is DSTest {
     } 
 
     function testEncode() public {
-        uint24 encoded = AliasPacked.encode(4095, 800);
+        bytes3 encoded = AliasPacked.encodeB(4095, 800);
         assertEq(uint24(encoded), 8387360);
     }
 
     function testDecode() public {
-        (uint16 p, uint16 a) = AliasPacked.decode(8387360);
+        (uint16 p, uint16 a) = AliasPacked.decodeB(bytes3(uint24(8387360)));
         assertEq(p, 4095);
         assertEq(a, 800);
     }
@@ -67,7 +67,7 @@ contract AliasPackedTest is DSTest {
     function testStoreBytes() public { 
         bytes memory b = hex"abc123";
 
-        address _pointer = AliasPacked.storeBytes(b);
+        address _pointer = SSTORE2.write(b);
 
         assertEq(_pointer.code.length - 1, 3);
     }

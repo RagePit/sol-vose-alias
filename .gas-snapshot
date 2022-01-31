@@ -1,8 +1,0 @@
-testAliasPackedInit() (gas: 4457692)
-testDecode() (gas: 391)
-testAliasPackedPrecision() (gas: 3379684)
-testEncode() (gas: 388)
-testSevenValues() (gas: 15134)
-testSingleValue() (gas: 3531)
-testSumRun() (gas: 26221358)
-testBinRun() (gas: 1636735)
